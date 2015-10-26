@@ -42,7 +42,7 @@ class TextAnalyzer(object):
     def __init__(self, page):
         self.url = page['url']
         self.page = page
-        self.keys = normalizer.top_in_text(get_all(page[u'text']), 20)
+        self.keys = normalizer.top_in_text(get_all(page[u'text']), 10)
 
     def title(self):
         if 10 < len(get_all(self.page[u'title'])) <= 70:
@@ -105,7 +105,20 @@ class TextAnalyzer(object):
             TextAnalyzer.ball += 3
         if len(get_all(self.page[u'text'])) >= 8000:
             TextAnalyzer.ball += 1
+
         for word in self.keys.keys():
             if word in get_all(self.page[u'title']).split() and word in get_all(self.page[u'h1']).split():
                 TextAnalyzer.ball += 2
+
+        best_word = normalizer.top_in_dict(self.keys, 1)
+
+        if float(best_word.values()[0]) < 1.0:
+            TextAnalyzer.ball += 2
+        elif 1.0 <= float(best_word.values()[0]) < 5.0:
+            TextAnalyzer.ball += 10
+        elif 5.0 <= float(best_word.values()[0]) < 20.0:
+            TextAnalyzer.ball += 5
+        elif float(best_word.values()[0]) >= 20.0:
+            TextAnalyzer.ball -= 10
+
         print 'За text {}'.format(TextAnalyzer.ball)
