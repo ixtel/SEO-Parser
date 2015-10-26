@@ -1,5 +1,4 @@
 import analyzer
-import normalizer
 from crawler import Parser
 from selenium import webdriver
 
@@ -22,15 +21,15 @@ p.get_elements()
 p.result[u'url'] = url
 
 
-text = ' '.join(p.result.get(u'text'))
-
 t = analyzer.TextAnalyzer(p.result)
-t.keys = ''.join(normalizer.top_in_text(text, 20).keys())
 t.title()
 t.description()
 t.keywords()
 t.canonical()
 t.h1()
+t.text()
+for x in t.keys:
+    print x, t.keys[x]
 print t.ball
 p.result[u'quality'] = t.ball
 p.save()
