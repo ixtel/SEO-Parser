@@ -1,3 +1,4 @@
+# coding: utf-8
 import analyzer
 from crawler import Parser
 from selenium import webdriver
@@ -9,7 +10,7 @@ URL = ['http://kiev.prom.ua/Markizy',
        'http://kiev.all.biz/markiza-gorizontalnaya-g8531585',
        'http://prom.ua/Gorizontalnaya-loktevaya-markiza.html']
 
-url = URL[4]
+url = URL[0]
 
 driver = webdriver.Firefox()
 driver.get(url)
@@ -25,15 +26,20 @@ p.result[u'url'] = url
 
 
 t = analyzer.TextAnalyzer(p.result)
-print 'Url {}'.format(p.url)
+print u'Url {}'.format(p.url)
+for x in t.__dict__:
+    if x != 'page':
+        print x, t.__dict__[x]
 t.title()
 t.description()
 t.keywords()
 t.canonical()
 t.h1()
+t.h2()
+t.h3()
 t.text()
-'''
-for x in t.keys:
-    print x, t.keys[x]'''
+t.anchors()
+
+print u'Всего баллов {}'.format(str(t.ball))
 p.result[u'quality'] = t.ball
 p.save()
