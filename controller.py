@@ -14,6 +14,22 @@ URL = ['http://kiev.prom.ua/Markizy',
        'http://kiev.all.biz/navesy-kozyrki-markizy-markizy-predstavlyayut-g156353',
        'http://markizy.kiev.ua/']
 
+URL2 = ['http://markiza.of.ua/works/corob/',
+        'http://kievjaluzi.kiev.ua/markizy-navesy/kovshevye-korobovye',
+        'http://markiza.kh.ua/%D0%BA%D0%BE%D0%B2%D1%88%D0%BE%D0%B2%D1%8B%D0%B5-%D0%BA%D0%BE%D1%80%D0%BE%D0%B1%D0%BE%D0%B2%D1%8B%D0%B5-%D0%BC%D0%B0%D1%80%D0%BA%D0%B8%D0%B7%D1%8B/',
+        'http://skr.com.ua/korobovaya',
+        'http://www.artika.lviv.ua/ru/kataloh-tovarivrus/zovnishnirus/markizyrus/kovshovi-markizyrus/',
+        'http://markiza-guru.com/component/k2/itemlist/category/7-kovshevye-markizy',
+        'http://www.sundesign.com.ua/markizy/korobovaya-markiza/',
+        'http://markizy.kiev.ua/korobovye-markizy',
+        'http://www.markiza.com.ua/korobovie/',
+        'http://www.markiza.ua/catalog/box/',
+        'http://www.markiza.ua/catalog/box/14/photos/',
+        'http://www.markiza.ua/catalog/box/14/',
+        'http://marsol.com.ua/gorizontalnie_markizi.html',
+        'http://markiza.ot.ua/korobovye_markizy',
+        'http://vdoma-crimea.com/p4191990-markiza-korobovaya-kowsh.html']
+
 # url = URL[0]
 
 
@@ -21,7 +37,7 @@ def main(url, database=False):
 
     if not database:
         p = Parser(url)
-        p.driver = False
+        p.driver = True
         p.get_html()
         p.get_elements()
         t = analyzer.TextAnalyzer(p.result)
@@ -55,6 +71,8 @@ def main(url, database=False):
     t.h3()
     t.text()
     t.anchors()
+    t.load_time()
+    t.size()
 
     '''
     print u'H1: {}'.format(t.h1_)
@@ -63,9 +81,13 @@ def main(url, database=False):
     for key in t.keys:
         print key, t.keys[key]
     '''
-    print u'KeyWords: {}'.format(t.keys.keys())
+    print u'KeyWords: {}'.format(u' '.join(t.keys))
     print u'Всего баллов {}'.format(str(t.ball))
 
+    client = MongoClient(DATABASE)
+    db = client.prom_all
+    db.result.insert_one(t.__dict__)
+
 if __name__ == '__main__':
-    for url in URL:
+    for url in URL2:
         main(url, False)

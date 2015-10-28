@@ -17,7 +17,10 @@ def text_normalizer(text):
 
 def words_count(text, is_percent=False):
     words = text.split()
-    percent = 100.0 / len(words)
+    if words:
+        percent = 100.0 / len(words)
+    else:
+        percent = 0
     d = dict()
     for word in words:
         if word not in d:
