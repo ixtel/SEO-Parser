@@ -2,7 +2,9 @@
 
 import urllib2
 import random
+import time
 
+from selenium import webdriver
 from bs4 import BeautifulSoup
 from lxml import html
 from pymongo import MongoClient
@@ -31,8 +33,10 @@ class Parser(object):
 
     def __init__(self, url=START_LINK, database=False):
         self.url = url
-        self.page = None
-        self.result = None
+        self.driver = True
+        self.page = ''
+        self.result = dict()
+        self.page_load_time = 0
         self.regulars = REGULARS
         Parser.urls_new.add(url)
 
@@ -59,29 +63,45 @@ class Parser(object):
             return False
 
     def get_elements(self):
+        self.result[u'url'] = self.url
+        self.result[u'load_time'] = self.page_load_time
+        self.result[u'size'] = len(self.page)
+
         # Parse html page by XPath
         tree = html.fromstring(self.page)
-        self.result = {page_element: tree.xpath(self.regulars[page_element]) for page_element in self.regulars}
+        for page_element in self.regulars:
+            self.result[page_element] = tree.xpath(self.regulars[page_element])
 
     def save(self):
         # Save result in Mongodb
         return Parser.db.urls.insert_one(self.result).inserted_id
 
+    def open_url(self):
+        time1 = time.time()
+        if self.driver:
+            driver = webdriver.Firefox()
+            driver.get(self.url)
+            elem = driver.find_element_by_xpath('//*')
+            self.page = elem.get_attribute('outerHTML')
+            driver.quit()
+        else:
+            self.page = unicode(urllib2.urlopen(self.url, timeout=TIMEOUT).read().decode('utf-8'))
+        time2 = time.time()
+        self.page_load_time = time2 - time1
+
     def get_html(self):
         try:
-            page = urllib2.urlopen(self.url, timeout=TIMEOUT)
+            self.open_url()
         except:
-            return False
-            
-        soup = BeautifulSoup(page, 'lxml')
+            self.result[u'error'] = u'Страница не загрузилась'
+
+        soup = BeautifulSoup(self.page, 'lxml')
         for link in soup.find_all('a'):
             normal_link = Parser.normalize(link.get('href'))
             if not normal_link:
                 continue
             if DOMAIN in normal_link:
                 Parser.urls_new.add(normal_link)
-        if not Parser.parse_flag:
-            self.page = unicode(soup.html)
 
     def parser(self):
         while Parser.urls_new:
@@ -97,13 +117,7 @@ class Parser(object):
                 Parser.count += 1
                 print u'[{}] Сканирую url {}'.format(Parser.count, self.url)
                 Parser.urls_old.add(self.url)
-                if self.get_html():
-                    self.get_elements()
-                    self.result[u'url'] = self.url
-                else:
-                    self.result = dict()
-                    self.result[u'url'] = self.url
-                    self.result[u'error'] = u'Error'
+                self.get_html()
                 self.save()
             if Parser.count == COUNT_URLS - TREADS + 1:
                 Parser.stop_flag = True

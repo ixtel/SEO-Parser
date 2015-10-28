@@ -119,7 +119,7 @@ class TextAnalyzer(object):
             if word in self.title_unik_slova:
                 self.title_ball += 2
         self.ball += self.title_ball
-        print u'За title {}'.format(self.title_ball)
+        # print u'За title {}'.format(self.title_ball)
 
     def description(self):
         if 100 < self.description_dlina <= 165:
@@ -130,7 +130,7 @@ class TextAnalyzer(object):
             if word in self.description_unik_slova:
                 self.description_ball += 1
         self.ball += self.description_ball
-        print u'За description {}'.format(self.description_ball)
+        # print u'За description {}'.format(self.description_ball)
 
     def keywords(self):
         for word in self.keys:
@@ -138,13 +138,13 @@ class TextAnalyzer(object):
                 self.keywords_ball += 1
                 break
         self.ball += self.keywords_ball
-        print u'За keywords {}'.format(self.keywords_ball)
+        # print u'За keywords {}'.format(self.keywords_ball)
 
     def canonical(self):
         if self.canonical_ == self.url:
             self.canonical_ball += 1
         self.ball += self.canonical_ball
-        print u'За canonical {}'.format(self.canonical_ball)
+        # print u'За canonical {}'.format(self.canonical_ball)
 
     def h1(self):
         if self.h1_kolichestvo_na_str == 0:
@@ -163,7 +163,7 @@ class TextAnalyzer(object):
             if word in self.h1_unik_slova:
                 self.h1_ball += 3
         self.ball += self.h1_ball
-        print u'За h1 {}'.format(self.h1_ball)
+        # print u'За h1 {}'.format(self.h1_ball)
 
     def h2(self):
         if 1 < self.h2_kolichestvo_na_str < 10:
@@ -178,7 +178,7 @@ class TextAnalyzer(object):
             if word in self.h2_unik_slova:
                 self.h2_ball += 1
         self.ball += self.h2_ball
-        print u'За h2 {}'.format(self.h2_ball)
+        # print u'За h2 {}'.format(self.h2_ball)
 
     def h3(self):
         if 1 < self.h3_kolichestvo_na_str < 20:
@@ -193,7 +193,7 @@ class TextAnalyzer(object):
             if word in self.h3_unik_slova:
                 self.h3_ball += 1
         self.ball += self.h3_ball
-        print u'За h3 {}'.format(self.h3_ball)
+        # print u'За h3 {}'.format(self.h3_ball)
 
     def text(self):
         text_ball = 0
@@ -220,7 +220,7 @@ class TextAnalyzer(object):
         elif float(best_word.values()[0]) >= 20.0:
             text_ball += -10
         self.ball += text_ball
-        print u'За text {}'.format(text_ball)
+        # print u'За text {}'.format(text_ball)
 
     def anchors(self):
         anchors_ball = 0
@@ -239,4 +239,4 @@ class TextAnalyzer(object):
         elif float(best_word.values()[0]) >= 20.0:
             anchors_ball += -10
         self.ball += anchors_ball
-        print u'За анкоры {}'.format(anchors_ball)
+        # print u'За анкоры {}'.format(anchors_ball)
