@@ -10,7 +10,7 @@ URL = ['http://kiev.prom.ua/Markizy',
        'http://kiev.all.biz/markiza-gorizontalnaya-g8531585',
        'http://prom.ua/Gorizontalnaya-loktevaya-markiza.html']
 
-url = URL[0]
+url = URL[1]
 
 driver = webdriver.Firefox()
 driver.get(url)
@@ -27,9 +27,19 @@ p.result[u'url'] = url
 
 t = analyzer.TextAnalyzer(p.result)
 print u'Url {}'.format(p.url)
+
+'''
 for x in t.__dict__:
     if x != 'page':
-        print x, t.__dict__[x]
+        if type(t.__dict__[x]) is dict:
+            for y in t.__dict__[x]:
+                print y, t.__dict__[x][y]
+        elif type(t.__dict__[x]) is list:
+            print x, ' '.join(t.__dict__[x])
+        else:
+            print x, t.__dict__[x]
+'''
+
 t.title()
 t.description()
 t.keywords()
@@ -39,7 +49,8 @@ t.h2()
 t.h3()
 t.text()
 t.anchors()
-
+print u'H1: {}'.format(t.h1_)
+print u'Title: {}'.format(t.title_)
 print u'Всего баллов {}'.format(str(t.ball))
 p.result[u'quality'] = t.ball
 p.save()
