@@ -134,6 +134,12 @@ class TextAnalyzer(object):
         self.anchors_unik_slova = list(set(self.anchors_normal.split()))                # list
         self.anchors_ball = 0                                                           # int
 
+        self.script_ = get_all(page_data[u'script'])                                    # unicode
+        self.script_kolichestvo_na_str = len(page_data[u'script'])                      # int
+        self.script_dlina = len(self.anchors_)                                          # int
+        self.script_procent_na_str = float(self.script_dlina) / self.size_ * 100        # float
+        self.script_ball = 0                                                            # int
+
     def title(self):
         if 10 < self.title_dlina <= 70:
             self.title_ball += 5
@@ -145,7 +151,7 @@ class TextAnalyzer(object):
             if word in self.title_unik_slova:
                 self.title_ball += 4
         self.ball += self.title_ball
-        # print u'За title {}'.format(self.title_ball)
+        print u'За title {}'.format(self.title_ball)
 
     def description(self):
         if 100 < self.description_dlina <= 165:
@@ -156,7 +162,7 @@ class TextAnalyzer(object):
             if word in self.description_unik_slova:
                 self.description_ball += 2
         self.ball += self.description_ball
-        # print u'За description {}'.format(self.description_ball)
+        print u'За description {}'.format(self.description_ball)
 
     def keywords(self):
         for word in self.keys:
@@ -164,13 +170,13 @@ class TextAnalyzer(object):
                 self.keywords_ball += 1
                 break
         self.ball += self.keywords_ball
-        # print u'За keywords {}'.format(self.keywords_ball)
+        print u'За keywords {}'.format(self.keywords_ball)
 
     def canonical(self):
         if self.canonical_ == self.url:
             self.canonical_ball += 1
         self.ball += self.canonical_ball
-        # print u'За canonical {}'.format(self.canonical_ball)
+        print u'За canonical {}'.format(self.canonical_ball)
 
     def h1(self):
         if self.h1_kolichestvo_na_str == 0:
@@ -189,7 +195,7 @@ class TextAnalyzer(object):
             if word in self.h1_unik_slova:
                 self.h1_ball += 5
         self.ball += self.h1_ball
-        # print u'За h1 {}'.format(self.h1_ball)
+        print u'За h1 {}'.format(self.h1_ball)
 
     def h2(self):
         if 1 < self.h2_kolichestvo_na_str < 10:
@@ -204,7 +210,7 @@ class TextAnalyzer(object):
             if word in self.h2_unik_slova:
                 self.h2_ball += 2
         self.ball += self.h2_ball
-        # print u'За h2 {}'.format(self.h2_ball)
+        print u'За h2 {}'.format(self.h2_ball)
 
     def h3(self):
         if 1 < self.h3_kolichestvo_na_str < 20:
@@ -219,7 +225,7 @@ class TextAnalyzer(object):
             if word in self.h3_unik_slova:
                 self.h3_ball += 1
         self.ball += self.h3_ball
-        # print u'За h3 {}'.format(self.h3_ball)
+        print u'За h3 {}'.format(self.h3_ball)
 
     def text(self):
         if 500 <= self.text_dlina < 2000:
@@ -243,7 +249,7 @@ class TextAnalyzer(object):
             self.text_ball += -10
 
         self.ball += self.text_ball
-        # print u'За text {}'.format(self.text_ball)
+        print u'За text {}'.format(self.text_ball)
 
     def anchors(self):
         for word in self.keys:
@@ -261,7 +267,7 @@ class TextAnalyzer(object):
         elif float(best_word.values()[0]) >= 10.0:
             self.anchors_ball += -10
         self.ball += self.anchors_ball
-        # print u'За анкоры {}'.format(self.anchors_ball)
+        print u'За анкоры {}'.format(self.anchors_ball)
 
     def load_time(self):
         if 0.01 <= self.load_time_ < 2:
@@ -277,6 +283,7 @@ class TextAnalyzer(object):
         elif self.load_time_ >= 40:
             self.load_time_ball += -20
         self.ball += self.load_time_ball
+        print u'За время загрузки {}'.format(self.load_time_ball)
 
     def size(self):
         if 0 <= self.size_ < 50000:
@@ -290,3 +297,24 @@ class TextAnalyzer(object):
         elif self.size_ >= 300000:
             self.size_ball += -10
         self.ball += self.size_ball
+        print u'За размер страницы {}'.format(self.size_ball)
+
+    def script(self):
+        if 0 <= self.script_kolichestvo_na_str < 4:
+            self.script_ball += 10
+        elif 4 <= self.script_kolichestvo_na_str < 8:
+            self.script_ball += 5
+        elif self.script_kolichestvo_na_str >= 8:
+            self.script_ball += -10
+        if 0 <= self.script_procent_na_str < 5:
+            self.script_ball += 5
+        elif 5 <= self.script_procent_na_str < 10:
+            self.script_ball += 3
+        elif 10 <= self.script_procent_na_str < 30:
+            self.script_ball += 1
+        elif 30 <= self.script_procent_na_str < 50:
+            self.script_ball += -3
+        elif self.script_procent_na_str >= 50:
+            self.script_ball += -10
+        self.ball += self.script_ball
+        print u'За скрипты {}'.format(self.script_ball)

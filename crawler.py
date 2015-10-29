@@ -79,7 +79,7 @@ class Parser(object):
     def open_url(self):
         time1 = time.time()
         if self.driver:
-            driver = webdriver.Firefox()
+            driver = webdriver.PhantomJS()
             driver.get(self.url)
             elem = driver.find_element_by_xpath('//*')
             self.page = elem.get_attribute('outerHTML')

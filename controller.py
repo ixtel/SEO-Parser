@@ -6,7 +6,7 @@ import analyzer
 from crawler import Parser
 
 
-URL = ['http://kiev.prom.ua/Markizy',
+URL = ['http://kiev.prom.ua/Markizyrrrrrrrrrrrrrrrrrrr',
        'http://prom.ua/Gorizontalnaya-loktevaya-markiza.html',
        'http://www.ua.all.biz/markizy-bgg1068719',
        'http://kiev.all.biz/markizy-bgg1068719',
@@ -73,6 +73,7 @@ def main(url, database=False):
     t.anchors()
     t.load_time()
     t.size()
+    t.script()
 
     '''
     print u'H1: {}'.format(t.h1_)
@@ -82,11 +83,13 @@ def main(url, database=False):
         print key, t.keys[key]
     '''
     print u'KeyWords: {}'.format(u' '.join(t.keys))
+    print '#'*50
     print u'Всего баллов {}'.format(str(t.ball))
+    print '#'*50
 
-    client = MongoClient(DATABASE)
-    db = client.prom_all
-    db.result.insert_one(t.__dict__)
+    # client = MongoClient(DATABASE)
+    # db = client.prom_all
+    # db.result.insert_one(t.__dict__)
 
 if __name__ == '__main__':
     for url in URL2:

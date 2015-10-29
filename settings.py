@@ -32,6 +32,7 @@ REGULARS = {
     u'h5': u'//h5//text()',
     u'h6': u'//h6//text()',
     u'text': u'//body//*[not(self::script or self::a)]/text()[normalize-space()]',  # or self::a
+    u'script': u'//script//text()',
     u'span': u'//span//text()',
     u'samp': u'//samp//text()',
     u'p': u'//p//text()',
