@@ -82,7 +82,7 @@ def main(url, database=False):
     for key in t.keys:
         print key, t.keys[key]
     '''
-    print u'KeyWords: {}'.format(u' '.join(t.keys))
+    print u'KeyWords: {}'.format(u' '.join(sorted(t.keys)))
     print '#'*50
     print u'Всего баллов {}'.format(str(t.ball))
     print '#'*50
