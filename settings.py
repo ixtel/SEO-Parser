@@ -3,7 +3,7 @@
 START_LINK = 'http://kiev.all.biz/'
 DOMAIN = 'kiev.all.biz'
 
-COUNT_URLS = 10
+COUNT_URLS = 0
 
 TIMEOUT = 20
 

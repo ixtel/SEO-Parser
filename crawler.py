@@ -1,11 +1,9 @@
 # coding: utf-8
 
-import urllib2
 import random
 import time
 
 from selenium import webdriver
-from bs4 import BeautifulSoup
 from lxml import html
 from pymongo import MongoClient
 
@@ -23,31 +21,32 @@ class Parser(object):
     db = client.prom_all
     stop_flag = False
 
+    for item in db.urls.find():
+        urls_old.add(item[u'url'])
+
     if urls_old:
         count = len(urls_old)
-        old_rand_list = random.sample(urls_old, 10)
-        parse_flag = True
+        old_rand_list = random.sample(urls_old, 3)
     else:
-        old_rand_list = []
-        parse_flag = False
+        old_rand_list = list()
 
-    def __init__(self, url=START_LINK, database=False):
+    def __init__(self, url=START_LINK):
         self.url = url
         self.driver = True
         self.page = ''
+        self.links = list()
+        self.in_links = list()
+        self.out_links = list()
         self.result = dict()
         self.page_load_time = 0
+        self.errors = ''
         self.regulars = REGULARS
         Parser.urls_new.add(url)
-
-        if database:
-            for item in Parser.db.urls.find():
-                Parser.urls_old.add(item['url'])
 
     @staticmethod
     def normalize(link):
         # Return normal link or False
-        link = unicode(link)
+        link = unicode(link).replace('\n', '')
         if not link:
             return False
         for stop_word in IGNORE_LIST:
@@ -66,11 +65,16 @@ class Parser(object):
         self.result[u'url'] = self.url
         self.result[u'load_time'] = self.page_load_time
         self.result[u'size'] = len(self.page)
-
-        # Parse html page by XPath
-        tree = html.fromstring(self.page)
-        for page_element in self.regulars:
-            self.result[page_element] = tree.xpath(self.regulars[page_element])
+        self.result[u'links'] = self.links
+        self.result[u'in_links'] = self.in_links
+        self.result[u'out_links'] = self.out_links
+        if not self.errors:
+            # Parse html page by XPath
+            tree = html.fromstring(self.page)
+            for page_element in self.regulars:
+                self.result[page_element] = tree.xpath(self.regulars[page_element])
+        else:
+            self.result[u'error'] = self.errors
 
     def save(self):
         # Save result in Mongodb
@@ -78,52 +82,65 @@ class Parser(object):
 
     def open_url(self):
         time1 = time.time()
-        if self.driver:
-            driver = webdriver.PhantomJS()
+        try:
+            driver = webdriver.PhantomJS(executable_path=r'C:\phantomjs\bin\phantomjs.exe')
             driver.get(self.url)
             elem = driver.find_element_by_xpath('//*')
             self.page = elem.get_attribute('outerHTML')
             driver.quit()
-        else:
-            self.page = unicode(urllib2.urlopen(self.url, timeout=TIMEOUT).read().decode('utf-8'))
+        except KeyboardInterrupt:
+            Parser.stop_flag = True
+            print 'Stop parsing'
+        except:
+            self.errors = u'Страница не загрузилась'
+            print 'Error'
         time2 = time.time()
         self.page_load_time = time2 - time1
 
-    def get_html(self):
-        try:
-            self.open_url()
-        except:
-            self.result[u'error'] = u'Страница не загрузилась'
+    def get_links(self):
+        tree = html.fromstring(self.page)
+        self.links = tree.xpath(u'//a//@href')
+        self.in_links = list()
+        self.out_links = list()
 
-        soup = BeautifulSoup(self.page, 'lxml')
-        for link in soup.find_all('a'):
-            normal_link = Parser.normalize(link.get('href'))
+        for link in self.links:
+            normal_link = Parser.normalize(link)
             if not normal_link:
                 continue
             if DOMAIN in normal_link:
+                self.in_links.append(link)
                 Parser.urls_new.add(normal_link)
+            else:
+                self.out_links.append(link)
 
     def parser(self):
         while Parser.urls_new:
 
             if Parser.old_rand_list:
                 for url in Parser.old_rand_list:
-                    Parser.get_html(url)
-                Parser.old_rand_list = []
-                Parser.parse_flag = False
-                
+                    self.url = url
+                    self.open_url()
+                    self.get_links()
+                Parser.old_rand_list = list()
+
             self.url = Parser.urls_new.pop()
             if self.url not in Parser.urls_old:
-                Parser.count += 1
-                print u'[{}] Сканирую url {}'.format(Parser.count, self.url)
-                Parser.urls_old.add(self.url)
-                self.get_html()
-                self.save()
-            if Parser.count == COUNT_URLS - TREADS + 1:
+                self.open_url()
+                if self.page:
+                    Parser.count += 1
+                    print u'[{}] Отсканировал url {}'.format(Parser.count, self.url)
+                    Parser.urls_old.add(self.url)
+                    self.get_links()
+                    self.get_elements()
+                    self.save()
+                self.result = dict()
+                self.page = ''
+            if Parser.count == COUNT_URLS:
                 Parser.stop_flag = True
             if Parser.stop_flag:
                 break
 
 if __name__ == '__main__':
     a = Parser()
+    print a.count
     a.parser()

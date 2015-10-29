@@ -6,9 +6,9 @@ import analyzer
 from crawler import Parser
 
 
-URL = ['http://kiev.prom.ua/Markizyrrrrrrrrrrrrrrrrrrr',
-       'http://prom.ua/Gorizontalnaya-loktevaya-markiza.html',
-       'http://www.ua.all.biz/markizy-bgg1068719',
+URL = [u'http://kiev.prom.ua/Markizy',
+       u'http://prom.ua/Gorizontalnaya-loktevaya-markiza.html',
+       u'http://www.ua.all.biz/markizy-bgg1068719',
        'http://kiev.all.biz/markizy-bgg1068719',
        'http://kiev.all.biz/markiza-gorizontalnaya-rivera-30002000mm-g8531599',
        'http://kiev.all.biz/navesy-kozyrki-markizy-markizy-predstavlyayut-g156353',
@@ -38,7 +38,7 @@ def main(url, database=False):
     if not database:
         p = Parser(url)
         p.driver = True
-        p.get_html()
+        p.open_url()
         p.get_elements()
         t = analyzer.TextAnalyzer(p.result)
         print u'Url: {} | Загружен за: {} сек'.format(p.result[u'url'], p.result[u'load_time'])
@@ -92,5 +92,5 @@ def main(url, database=False):
     # db.result.insert_one(t.__dict__)
 
 if __name__ == '__main__':
-    for url in URL2:
+    for url in URL:
         main(url, False)
