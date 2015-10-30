@@ -1,5 +1,5 @@
 # coding: utf-8
-import normalizer
+import text_utils
 
 
 def get_max(l):
@@ -34,11 +34,11 @@ def get_all(l, flag=False):
     if type(l) is list:
         new = u' '.join(delete_none(l))
         if flag:
-            return normalizer.text_normalizer(new)
+            return text_utils.text_normalizer(new)
         else:
             return u' '.join(new.lower().split())
     if type(l) in (str, unicode):
-        return normalizer.text_normalizer(l)
+        return text_utils.text_normalizer(l)
     if type(l) is None:
         return ''
 
@@ -57,7 +57,7 @@ class TextAnalyzer(object):
         self.size_ = page_data[u'size']                                                 # int
         self.size_ball = 0                                                              # int
 
-        self.keys = normalizer.top_in_text(get_all(page_data[u'text']), 5)              # dict
+        self.keys = text_utils.top_in_text(get_all(page_data[u'text']), 5)              # dict
 
         self.title_ = get_all(page_data[u'title'])                                      # unicode
         self.title_normal = get_all(page_data[u'title'], True)                          # unicode
@@ -237,7 +237,7 @@ class TextAnalyzer(object):
         if self.text_dlina >= 8000:
             self.text_ball += 1
 
-        best_word = normalizer.top_in_dict(self.keys, 1)
+        best_word = text_utils.top_in_dict(self.keys, 1)
 
         if float(best_word.values()[0]) < 1.0:
             self.text_ball += -2
@@ -256,7 +256,7 @@ class TextAnalyzer(object):
             if word in self.anchors_unik_slova:
                 self.anchors_ball += 1
 
-        best_word = normalizer.top_in_text(self.anchors_, 1)
+        best_word = text_utils.top_in_text(self.anchors_, 1)
 
         if float(best_word.values()[0]) < 3.0:
             self.anchors_ball += 1

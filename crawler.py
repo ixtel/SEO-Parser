@@ -17,8 +17,9 @@ class Parser(object):
     
     count = 0
 
+    db_name = 'allbiz'
     client = MongoClient(DATABASE)
-    db = client.prom_all
+    db = client[db_name]
     stop_flag = False
 
     for item in db.urls.find():
@@ -32,7 +33,6 @@ class Parser(object):
 
     def __init__(self, url=START_LINK):
         self.url = url
-        self.driver = True
         self.page = ''
         self.links = list()
         self.in_links = list()
@@ -62,12 +62,14 @@ class Parser(object):
             return False
 
     def get_elements(self):
+
         self.result[u'url'] = self.url
         self.result[u'load_time'] = self.page_load_time
         self.result[u'size'] = len(self.page)
         self.result[u'links'] = self.links
         self.result[u'in_links'] = self.in_links
         self.result[u'out_links'] = self.out_links
+
         if not self.errors:
             # Parse html page by XPath
             tree = html.fromstring(self.page)
@@ -78,16 +80,16 @@ class Parser(object):
 
     def save(self):
         # Save result in Mongodb
-        return Parser.db.urls.insert_one(self.result).inserted_id
+        Parser.db.urls.insert_one(self.result)
+        self.result, self.page, self.url, self.page_load_time, self.links = {}, '', '', 0, []
 
     def open_url(self):
         time1 = time.time()
         try:
-            driver = webdriver.PhantomJS(executable_path=r'C:\phantomjs\bin\phantomjs.exe')
-            driver.get(self.url)
-            elem = driver.find_element_by_xpath('//*')
-            self.page = elem.get_attribute('outerHTML')
-            driver.quit()
+            browser = webdriver.PhantomJS()  # executable_path=r'C:\phantomjs\bin\phantomjs.exe'
+            browser.get(self.url)
+            self.page = browser.page_source
+            browser.quit()
         except KeyboardInterrupt:
             Parser.stop_flag = True
             print 'Stop parsing'
@@ -133,8 +135,6 @@ class Parser(object):
                     self.get_links()
                     self.get_elements()
                     self.save()
-                self.result = dict()
-                self.page = ''
             if Parser.count == COUNT_URLS:
                 Parser.stop_flag = True
             if Parser.stop_flag:
