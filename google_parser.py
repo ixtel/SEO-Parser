@@ -16,6 +16,15 @@ def qa(q):
     return q.strip().replace(u' ', u'+')
 
 
+def norm(l):
+    new = []
+    for url in l:
+        url = url.replace('/url?q=', '')
+        url = url.split('&sa=U')[0]
+        new.append(url)
+    return new
+
+
 def main():
     p = Parser()
 
@@ -28,14 +37,7 @@ def main():
         p.open_url()
         p.get_elements()
         p.result[u'query'] = q
-
-        for num, url in enumerate(p.result[u'sites']):
-            url = url.replace('/url?q=', '')
-            url = url.split('&sa=U')[0]
-            p.result[u'sites'][num] = url
-
-        del(p.result[u'links'], p.result[u'in_links'], p.result[u'out_links'])
-
+        p.result[u'sites'] = norm(p.result[u'sites'])
         p.save()
         print u'Запрос: [{}] "{}" отсканирован и сохранен'.format(n, q)
 

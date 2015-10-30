@@ -61,8 +61,7 @@ class Parser(object):
         else:
             return False
 
-    def get_elements(self):
-
+    def set_elements(self):
         self.result[u'url'] = self.url
         self.result[u'load_time'] = self.page_load_time
         self.result[u'size'] = len(self.page)
@@ -70,6 +69,7 @@ class Parser(object):
         self.result[u'in_links'] = self.in_links
         self.result[u'out_links'] = self.out_links
 
+    def get_elements(self):
         if not self.errors:
             # Parse html page by XPath
             tree = html.fromstring(self.page)
@@ -134,6 +134,7 @@ class Parser(object):
                     Parser.urls_old.add(self.url)
                     self.get_links()
                     self.get_elements()
+                    self.set_elements()
                     self.save()
             if Parser.count == COUNT_URLS:
                 Parser.stop_flag = True
