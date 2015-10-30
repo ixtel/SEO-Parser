@@ -6,7 +6,7 @@ import time
 from selenium import webdriver
 from lxml import html
 from pymongo import MongoClient
-
+from reppy.cache import RobotsCache
 from settings import *
 
 
@@ -14,10 +14,12 @@ class Parser(object):
 
     urls_new = set()
     urls_old = set()
-    
     count = 0
 
-    db_name = 'allbiz'
+    robots = RobotsCache()
+    rules = robots.cache(ROBOTS_LINK)
+
+    db_name = 'www_bg_all_biz'
     client = MongoClient(DATABASE)
     db = client[db_name]
     stop_flag = False
@@ -27,7 +29,10 @@ class Parser(object):
 
     if urls_old:
         count = len(urls_old)
-        old_rand_list = random.sample(urls_old, 3)
+        if COUNT_URLS < 10:
+            old_rand_list = urls_old
+        else:
+            old_rand_list = random.sample(urls_old, 3)
     else:
         old_rand_list = list()
 
@@ -46,18 +51,20 @@ class Parser(object):
     @staticmethod
     def normalize(link):
         # Return normal link or False
-        link = unicode(link).replace('\n', '')
+        link = unicode(link).replace(u'\n', u'')
         if not link:
             return False
         for stop_word in IGNORE_LIST:
             if stop_word in link.lower():
                 return False
-        if link.startswith('http'):
+        if link.startswith(u'#'):
+            return False
+        elif link.startswith(u'http'):
             return link
         elif link.startswith(DOMAIN):
-            return 'http://' + link
-        elif link.startswith('/') and DOMAIN not in link:
-            return 'http://' + DOMAIN + link
+            return u'http://' + link
+        elif link.startswith(u'/') and DOMAIN not in link:
+            return u'http://' + DOMAIN + link
         else:
             return False
 
@@ -78,21 +85,45 @@ class Parser(object):
         else:
             self.result[u'error'] = self.errors
 
+    @staticmethod
+    def meta_robots(robots):
+        if not robots:
+            return True, True
+        index = robots[0].split(u',')[0].strip()
+        follow = robots[0].split(u',')[1].strip()
+        if index is u'none':
+            index, follow = False, False
+        elif index is u"all":
+            index, follow = True, True
+        elif index is u"noindex":
+            index = False
+        elif index is u"index":
+            index = True
+        elif follow is u"nofollow":
+            follow = False
+        elif follow is u"follow":
+            follow = True
+        return index, follow
+
     def save(self):
         # Save result in Mongodb
         Parser.db.urls.insert_one(self.result)
+
+    def clean(self):
         self.result, self.page, self.url, self.page_load_time, self.links = {}, '', '', 0, []
 
     def open_url(self):
         time1 = time.time()
         try:
-            browser = webdriver.PhantomJS()  # executable_path=r'C:\phantomjs\bin\phantomjs.exe'
+            browser = webdriver.PhantomJS(executable_path=r'C:\phantomjs\bin\phantomjs.exe')  # executable_path=r'C:\phantomjs\bin\phantomjs.exe'
             browser.get(self.url)
             self.page = browser.page_source
             browser.quit()
         except KeyboardInterrupt:
             Parser.stop_flag = True
-            print 'Stop parsing'
+            print u'Сканирование отменено:'
+            print u'Успел отсканировать: {}'.format(len(Parser.urls_old))
+            print u'Осталось в очереди на сканирование: {}'.format(len(Parser.urls_new))
         except:
             self.errors = u'Страница не загрузилась'
             print 'Error'
@@ -110,10 +141,13 @@ class Parser(object):
             if not normal_link:
                 continue
             if DOMAIN in normal_link:
-                self.in_links.append(link)
-                Parser.urls_new.add(normal_link)
+                if Parser.rules.allowed(normal_link, AGENT):
+                    self.in_links.append(normal_link)
             else:
-                self.out_links.append(link)
+                self.out_links.append(normal_link)
+        Parser.urls_new = Parser.urls_new | set(self.in_links)
+        if CHECK_OUTLINKS:
+            Parser.urls_new = Parser.urls_new | set(self.out_links)
 
     def parser(self):
         while Parser.urls_new:
@@ -129,13 +163,16 @@ class Parser(object):
             if self.url not in Parser.urls_old:
                 self.open_url()
                 if self.page:
-                    Parser.count += 1
+                    self.get_elements()
                     print u'[{}] Отсканировал url {}'.format(Parser.count, self.url)
                     Parser.urls_old.add(self.url)
-                    self.get_links()
-                    self.get_elements()
-                    self.set_elements()
-                    self.save()
+                    Parser.count += 1
+                    if Parser.meta_robots(self.result[u'robots'])[1]:
+                        self.get_links()
+                    if Parser.meta_robots(self.result[u'robots'])[0]:
+                        self.set_elements()
+                        self.save()
+                    self.clean()
             if Parser.count == COUNT_URLS:
                 Parser.stop_flag = True
             if Parser.stop_flag:

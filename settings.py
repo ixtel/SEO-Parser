@@ -1,15 +1,17 @@
 # coding: utf-8
 
-START_LINK = 'http://kiev.all.biz/'
-DOMAIN = 'kiev.all.biz'
+START_LINK = 'http://www.bg.all.biz/'
+DOMAIN = 'www.bg.all.biz'
+ROBOTS_LINK = 'http://www.bg.all.biz/robots.txt'
 
-COUNT_URLS = 0
+COUNT_URLS = 200
 
 TIMEOUT = 20
 
 TREADS = 10
 
 CHECK_OUTLINKS = False
+AGENT = ''
 
 IGNORE_LIST = [".ico", ".gif", ".png", ".jpg", ".jpeg", ".bmp", ".mp4",
                ".webm", ".apk", ".ogv", ".swf", ".svg", ".eot",
