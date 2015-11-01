@@ -4,7 +4,7 @@ START_LINK = 'http://www.bg.all.biz/'
 DOMAIN = 'www.bg.all.biz'
 ROBOTS_LINK = 'http://www.bg.all.biz/robots.txt'
 
-COUNT_URLS = 200
+COUNT_URLS = 20000
 
 TIMEOUT = 20
 

@@ -32,7 +32,7 @@ class Parser(object):
         if COUNT_URLS < 10:
             old_rand_list = urls_old
         else:
-            old_rand_list = random.sample(urls_old, 3)
+            old_rand_list = random.sample(urls_old, 10)
     else:
         old_rand_list = list()
 
@@ -84,6 +84,7 @@ class Parser(object):
                 self.result[page_element] = tree.xpath(self.regulars[page_element])
         else:
             self.result[u'error'] = self.errors
+            self.result[u'robots'] = [u'index, follow']
 
     @staticmethod
     def meta_robots(robots):
@@ -103,6 +104,8 @@ class Parser(object):
             follow = False
         elif follow is u"follow":
             follow = True
+        else:
+            index, follow = False, False
         return index, follow
 
     def save(self):
@@ -110,12 +113,13 @@ class Parser(object):
         Parser.db.urls.insert_one(self.result)
 
     def clean(self):
-        self.result, self.page, self.url, self.page_load_time, self.links = {}, '', '', 0, []
+        self.result, self.page, self.url, self.page_load_time, self.links, self.robots = {}, '', '', 0, [], []
 
     def open_url(self):
         time1 = time.time()
         try:
-            browser = webdriver.PhantomJS(executable_path=r'C:\phantomjs\bin\phantomjs.exe')  # executable_path=r'C:\phantomjs\bin\phantomjs.exe'
+            browser = webdriver.PhantomJS()  # executable_path=r'C:\phantomjs\bin\phantomjs.exe'
+            browser.set_page_load_timeout(20)
             browser.get(self.url)
             self.page = browser.page_source
             browser.quit()
@@ -131,6 +135,8 @@ class Parser(object):
         self.page_load_time = time2 - time1
 
     def get_links(self):
+        if not self.page:
+            return
         tree = html.fromstring(self.page)
         self.links = tree.xpath(u'//a//@href')
         self.in_links = list()
@@ -164,14 +170,14 @@ class Parser(object):
                 self.open_url()
                 if self.page:
                     self.get_elements()
-                    print u'[{}] Отсканировал url {}'.format(Parser.count, self.url)
-                    Parser.urls_old.add(self.url)
-                    Parser.count += 1
                     if Parser.meta_robots(self.result[u'robots'])[1]:
                         self.get_links()
                     if Parser.meta_robots(self.result[u'robots'])[0]:
                         self.set_elements()
                         self.save()
+                        print u'[{}] Отсканировал url {}'.format(Parser.count, self.url)
+                        Parser.urls_old.add(self.url)
+                        Parser.count += 1
                     self.clean()
             if Parser.count == COUNT_URLS:
                 Parser.stop_flag = True
