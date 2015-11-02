@@ -1,55 +1,5 @@
 # coding: utf-8
-import text_utils
-
-
-def get_max(l):
-    max_l = 0
-    item = ''
-    for i in l:
-        if not i:
-            continue
-        if len(i) > max_l:
-            max_l = len(i)
-            item = i
-    return item
-
-
-def get_one(l):
-    if type(l) is list:
-        return get_max(l)
-    if type(l) in (str, unicode):
-        return l
-    if type(l) is None:
-        return ''
-
-
-def delete_none(l):
-    for num, item in enumerate(l):
-        if not item:
-            del l[num]
-    return l
-
-
-def get_all(l, flag=False):
-    if type(l) is list:
-        new = u' '.join(delete_none(l))
-        if flag:
-            return text_utils.text_normalizer(new)
-        else:
-            return u' '.join(new.lower().split())
-    if type(l) in (str, unicode):
-        return text_utils.text_normalizer(l)
-    if type(l) is None:
-        return ''
-
-
-def mistake(f):
-    def wrap():
-         try:
-             f()
-         except:
-            return
-    return wrap()
+from . import get_all, get_one, top_in_text
 
 
 class TextAnalyzer(object):
@@ -65,7 +15,7 @@ class TextAnalyzer(object):
         self.size_ = page_data[u'size']                                                 # int
         self.size_ball = 0                                                              # int
 
-        self.keys = text_utils.top_in_text(get_all(page_data[u'text']), 5)              # dict
+        self.keys = []                                                                  # list
 
         self.title_ = get_all(page_data[u'title'])                                      # unicode
         self.title_normal = get_all(page_data[u'title'], True)                          # unicode
@@ -123,6 +73,7 @@ class TextAnalyzer(object):
         self.h3_ball = 0                                                                # int
 
         self.text_ = get_all(page_data[u'text'])                                        # unicode
+        self.text_top5 = top_in_text(self.text_, 5)                          # unicode
         self.text_normal = get_all(page_data[u'text'], True)                            # unicode
         self.text_kolichestvo_na_str = len(page_data[u'text'])                          # int
         self.text_dlina = len(self.text_)                                               # int
@@ -254,7 +205,14 @@ class TextAnalyzer(object):
         if self.text_dlina >= 8000:
             self.text_ball += -5
 
-        best_word = text_utils.top_in_dict(self.keys, 1)
+        for word in self.keys:
+            if word in self.text_top5:
+                self.text_ball += 20
+
+        best_word = top_in_text(self.text_, 1)
+
+        if best_word in self.keys:
+            self.text_ball += 20
 
         if float(best_word.values()[0]) < 1.0:
             self.text_ball += -2
@@ -273,7 +231,7 @@ class TextAnalyzer(object):
             if word in self.anchors_unik_slova:
                 self.anchors_ball += 1
 
-        best_word = text_utils.top_in_text(self.anchors_, 1)
+        best_word = top_in_text(self.anchors_, 1)
 
         if float(best_word.values()[0]) < 3.0:
             self.anchors_ball += 1
@@ -336,13 +294,13 @@ class TextAnalyzer(object):
         if self.js_files_kolichestvo < 10:
             self.js_files_ball += 3
         self.ball += self.js_files_ball
-        print u'За скрипты {}'.format(self.js_files_ball)
+        print u'За js файлы {}'.format(self.js_files_ball)
 
     def in_links(self):
         if self.in_links_kolichestvo < 150:
             self.in_links_ball += 7
         self.ball += self.in_links_ball
-        print u'За скрипты {}'.format(self.in_links_ball)
+        print u'За внутренние ссылки {}'.format(self.in_links_ball)
 
     def out_links(self):
         if self.out_links_kolichestvo < 10:
@@ -350,4 +308,4 @@ class TextAnalyzer(object):
         if self.out_links_kolichestvo > 20:
             self.out_links_ball += -5
         self.ball += self.out_links_ball
-        print u'За скрипты {}'.format(self.out_links_ball)
+        print u'За внешние ссылки {}'.format(self.out_links_ball)

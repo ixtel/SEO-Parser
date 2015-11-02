@@ -1,9 +1,9 @@
 # coding: utf-8
 from pymongo import MongoClient
 
-from settings import DATABASE
-import analyzer
+from analyzer import TextAnalyzer
 from crawler import Parser
+from settings import DATABASE
 
 
 def main():
@@ -18,6 +18,8 @@ def main():
         for i in range(100):
             if query['sites'][i].startswith('http'):
                 print query['sites'][i]
+                if db.index.find({u'url': query['sites'][i]}).count() == 1:
+                    continue
                 p = Parser(query['sites'][i], False)
                 p.open_url()
                 p.get_links()
@@ -27,7 +29,8 @@ def main():
                 p.result['position'] = i
                 db.index.insert_one(p.result)
                 try:
-                    t = analyzer.TextAnalyzer(p.result)
+                    t = TextAnalyzer(p.result)
+                    t.keys = query['query'].split()
                     t.title()
                     t.description()
                     t.keywords()

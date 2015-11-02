@@ -66,6 +66,56 @@ def top_in_text(text, num):
     words = words_count(text, True)
     return top_in_dict(words, num)
 
+
+def get_max(l):
+    max_l = 0
+    item = ''
+    for i in l:
+        if not i:
+            continue
+        if len(i) > max_l:
+            max_l = len(i)
+            item = i
+    return item
+
+
+def get_one(l):
+    if type(l) is list:
+        return get_max(l)
+    if type(l) in (str, unicode):
+        return l
+    if type(l) is None:
+        return ''
+
+
+def delete_none(l):
+    for num, item in enumerate(l):
+        if not item:
+            del l[num]
+    return l
+
+
+def get_all(l, flag=False):
+    if type(l) is list:
+        new = u' '.join(delete_none(l))
+        if flag:
+            return __init__.text_normalizer(new)
+        else:
+            return u' '.join(new.lower().split())
+    if type(l) in (str, unicode):
+        return __init__.text_normalizer(l)
+    if type(l) is None:
+        return ''
+
+
+def mistake(f):
+    def wrap():
+         try:
+             f()
+         except:
+            return
+    return wrap()
+
 '''
 text = u"""
 Вам нужны клиенты? Чтобы добавить товары и услуги в каталог Prom.ua, зарегистрируйте свою компанию / Спасибо, но я покупатель

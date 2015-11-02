@@ -18,12 +18,6 @@ IGNORE_LIST = [".ico", ".gif", ".png", ".jpg", ".jpeg", ".bmp", ".mp4",
                "@", ".zip", ".7z", ".rar", ".exe", ".pl", ".pdf",
                ".css", ".js"]
 
-IMAGE_LIST = [".ico", ".gif", ".png", ".jpg", ".jpeg", ".bmp", ".mp4",
-               ".webm", ".apk", ".ogv", ".swf", ".svg", ".eot",
-               ".ttf", ".woff", "javascript:", "data:",
-               "@", ".zip", ".7z", ".rar", ".exe", ".pl", ".pdf",
-               ".css", ".js"]
-
 DATABASE = 'mongodb://localhost:27017/'
 DB_NAME = 'www_bg_all_biz'
 

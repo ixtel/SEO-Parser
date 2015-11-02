@@ -2,7 +2,7 @@
 from pymongo import MongoClient
 
 from settings import DATABASE
-import analyzer
+from analyzer import TextAnalyzer
 from crawler import Parser
 
 
@@ -21,14 +21,14 @@ def main(url, database=False):
         p = Parser(url)
         p.open_url()
         p.get_elements()
-        t = analyzer.TextAnalyzer(p.result)
+        t = TextAnalyzer(p.result)
         print u'Url: {} | Загружен за: {} сек'.format(p.result[u'url'], p.result[u'load_time'])
     else:
         client = MongoClient(DATABASE)
         db = client.prom_all
         result = db.urls.find({'url': url})
         result = result[0]
-        t = analyzer.TextAnalyzer(result)
+        t = TextAnalyzer(result)
         print u'Url: {} | Загружен за: {} сек'.format(result[u'url'], result[u'load_time'])
 
     '''

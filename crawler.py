@@ -7,8 +7,9 @@ from selenium import webdriver
 from lxml import html
 from pymongo import MongoClient
 from reppy.cache import RobotsCache
+
 from settings import ROBOTS_LINK, DATABASE, START_LINK, REGULARS, IGNORE_LIST, \
-    DOMAIN, AGENT, COUNT_URLS, RAND_NUM, DB_NAME
+    AGENT, COUNT_URLS, RAND_NUM, DB_NAME
 
 # import pdb
 # pdb.set_trace()
@@ -132,7 +133,7 @@ class Parser(object):
     def open_url(self):
         time1 = time.time()
         try:
-            browser = webdriver.PhantomJS(executable_path=r'C:\phantomjs\bin\phantomjs.exe')
+            browser = webdriver.PhantomJS()
             # PhantomJS executable_path=r'C:\phantomjs\bin\phantomjs.exe'
             browser.set_page_load_timeout(20)
             browser.get(self.url)

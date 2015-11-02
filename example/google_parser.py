@@ -1,10 +1,10 @@
 # coding: utf-8
-from datetime import date
 import urllib
+from datetime import date
+
 from crawler import Parser
 
-with open('keys.txt', 'r') as f:
-    queries = f.read().split('\n')
+queries = [u'купить мармелад', u'купить макароны']
 
 google = u'https://www.google.com.ua/search?num=100&hl=ru&q='
 # example url is: https://www.google.com.ua/search?num=100&hl=ru&q=купить+мармелад
@@ -31,7 +31,6 @@ def main():
     p.regulars = {u'sites': u'//h3[@class="r"]/a/@href'}
 
     for n, q in enumerate(queries):
-        q = q.decode('utf-8')
         p.url = google + urllib.quote(qa(q).encode('cp1251'))
         p.open_url()
         p.get_elements()
