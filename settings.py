@@ -4,13 +4,12 @@ START_LINK = 'http://www.bg.all.biz/'
 DOMAIN = 'www.bg.all.biz'
 ROBOTS_LINK = 'http://www.bg.all.biz/robots.txt'
 
-COUNT_URLS = 20000
+COUNT_URLS = 200000
+
+RAND_NUM = 5
 
 TIMEOUT = 20
 
-TREADS = 10
-
-CHECK_OUTLINKS = False
 AGENT = ''
 
 IGNORE_LIST = [".ico", ".gif", ".png", ".jpg", ".jpeg", ".bmp", ".mp4",
@@ -19,7 +18,14 @@ IGNORE_LIST = [".ico", ".gif", ".png", ".jpg", ".jpeg", ".bmp", ".mp4",
                "@", ".zip", ".7z", ".rar", ".exe", ".pl", ".pdf",
                ".css", ".js"]
 
+IMAGE_LIST = [".ico", ".gif", ".png", ".jpg", ".jpeg", ".bmp", ".mp4",
+               ".webm", ".apk", ".ogv", ".swf", ".svg", ".eot",
+               ".ttf", ".woff", "javascript:", "data:",
+               "@", ".zip", ".7z", ".rar", ".exe", ".pl", ".pdf",
+               ".css", ".js"]
+
 DATABASE = 'mongodb://localhost:27017/'
+DB_NAME = 'www_bg_all_biz'
 
 REGULARS = {
     u'title': u'//title/text()',
@@ -38,7 +44,7 @@ REGULARS = {
     u'span': u'//span//text()',
     u'samp': u'//samp//text()',
     u'p': u'//p//text()',
-    u'a': u'//a//text()',
+    u'anchors': u'//a//text()',
     u'b': u'//b//text()',
     u'i': u'//i//text()',
     u'strong': u'//strong//text()',

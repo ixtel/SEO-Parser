@@ -43,11 +43,19 @@ def get_all(l, flag=False):
         return ''
 
 
+def mistake(f):
+    def wrap():
+         try:
+             f()
+         except:
+            return
+    return wrap()
+
+
 class TextAnalyzer(object):
 
     def __init__(self, page_data):
 
-        self.page_data_dict = page_data                                                 # dict
         self.url = page_data[u'url']                                                    # unicode
         self.ball = 0                                                                   # int
 
@@ -124,9 +132,9 @@ class TextAnalyzer(object):
         self.text_unik_slova = list(set(self.text_normal.split()))                      # list
         self.text_ball = 0                                                              # int
 
-        self.anchors_ = get_all(page_data[u'a'])                                        # unicode
-        self.anchors_normal = get_all(page_data[u'a'], True)                            # unicode
-        self.anchors_kolichestvo_na_str = len(page_data[u'a'])                          # int
+        self.anchors_ = get_all(page_data[u'anchors'])                                        # unicode
+        self.anchors_normal = get_all(page_data[u'anchors'], True)                            # unicode
+        self.anchors_kolichestvo_na_str = len(page_data[u'anchors'])                          # int
         self.anchors_dlina = len(self.anchors_)                                         # int
         self.anchors_col_slov = len(self.anchors_normal.split())                        # int
         self.anchors_col_unik_slov = len(set(self.anchors_normal.split()))              # int
@@ -140,22 +148,31 @@ class TextAnalyzer(object):
         self.script_procent_na_str = float(self.script_dlina) / self.size_ * 100        # float
         self.script_ball = 0                                                            # int
 
+        self.js_files_kolichestvo = len(page_data[u'js_files'])                         # int
+        self.js_files_ball = 0                                                          # int
+
+        self.in_links_kolichestvo = len(page_data[u'in_links'])                         # int
+        self.in_links_ball = 0                                                          # int
+
+        self.out_links_kolichestvo = len(page_data[u'out_links'])                       # int
+        self.out_links_ball = 0                                                         # int
+
     def title(self):
         if 10 < self.title_dlina <= 70:
-            self.title_ball += 5
-        if 70 < self.title_dlina <= 150:
             self.title_ball += 3
+        if 70 < self.title_dlina <= 150:
+            self.title_ball += 1
         if self.title_col_slov == self.title_col_unik_slov:
             self.title_ball += 3
         for word in self.keys:
             if word in self.title_unik_slova:
-                self.title_ball += 4
+                self.title_ball += 5
         self.ball += self.title_ball
         print u'За title {}'.format(self.title_ball)
 
     def description(self):
         if 100 < self.description_dlina <= 165:
-            self.description_ball += 1
+            self.description_ball += 2
         if not self.description_ == self.title_:
             self.description_ball += 1
         for word in self.keys:
@@ -180,20 +197,20 @@ class TextAnalyzer(object):
 
     def h1(self):
         if self.h1_kolichestvo_na_str == 0:
-            self.h1_ball += -3
+            self.h1_ball += -5
         if self.h1_kolichestvo_na_str == 1:
-            self.h1_ball += 3
+            self.h1_ball += 5
         if self.h1_kolichestvo_na_str > 1:
-            self.h1_ball += -2
+            self.h1_ball += -3
         if 5 < self.h1_dlina < 100:
-            self.h1_ball += 3
+            self.h1_ball += 5
         if 1 < self.h1_col_slov < 6:
-            self.h1_ball += 3
+            self.h1_ball += 2
         if self.h1_col_slov == self.h1_col_unik_slov:
             self.h1_ball += 3
         for word in self.keys:
             if word in self.h1_unik_slova:
-                self.h1_ball += 5
+                self.h1_ball += 10
         self.ball += self.h1_ball
         print u'За h1 {}'.format(self.h1_ball)
 
@@ -233,9 +250,9 @@ class TextAnalyzer(object):
         if 2000 <= self.text_dlina < 4000:
             self.text_ball += 10
         if 4000 <= self.text_dlina < 8000:
-            self.text_ball += 3
+            self.text_ball += 20
         if self.text_dlina >= 8000:
-            self.text_ball += 1
+            self.text_ball += -5
 
         best_word = text_utils.top_in_dict(self.keys, 1)
 
@@ -275,13 +292,9 @@ class TextAnalyzer(object):
         elif 2 <= self.load_time_ < 5:
             self.load_time_ball += 5
         elif 5 <= self.load_time_ < 10:
-            self.load_time_ball += 2
+            self.load_time_ball += 0
         elif 10 <= self.load_time_ < 20:
             self.load_time_ball += -5
-        elif 20 <= self.load_time_ < 40:
-            self.load_time_ball += -10
-        elif self.load_time_ >= 40:
-            self.load_time_ball += -20
         self.ball += self.load_time_ball
         print u'За время загрузки {}'.format(self.load_time_ball)
 
@@ -318,3 +331,23 @@ class TextAnalyzer(object):
             self.script_ball += -10
         self.ball += self.script_ball
         print u'За скрипты {}'.format(self.script_ball)
+
+    def js_files(self):
+        if self.js_files_kolichestvo < 10:
+            self.js_files_ball += 3
+        self.ball += self.js_files_ball
+        print u'За скрипты {}'.format(self.js_files_ball)
+
+    def in_links(self):
+        if self.in_links_kolichestvo < 150:
+            self.in_links_ball += 7
+        self.ball += self.in_links_ball
+        print u'За скрипты {}'.format(self.in_links_ball)
+
+    def out_links(self):
+        if self.out_links_kolichestvo < 10:
+            self.out_links_ball += 5
+        if self.out_links_kolichestvo > 20:
+            self.out_links_ball += -5
+        self.ball += self.out_links_ball
+        print u'За скрипты {}'.format(self.out_links_ball)

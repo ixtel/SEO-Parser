@@ -3,10 +3,8 @@ from datetime import date
 import urllib
 from crawler import Parser
 
-queries = [u'купить мармелад',
-           u'сигареты оптом',
-           u'купить пшеницу',
-           u'купить дрова']
+with open('keys.txt', 'r') as f:
+    queries = f.read().split('\n')
 
 google = u'https://www.google.com.ua/search?num=100&hl=ru&q='
 # example url is: https://www.google.com.ua/search?num=100&hl=ru&q=купить+мармелад
@@ -19,26 +17,29 @@ def qa(q):
 def norm(l):
     new = []
     for url in l:
-        url = url.replace('/url?q=', '')
-        url = url.split('&sa=U')[0]
+        url = url.replace(u'/url?q=', u'')
+        url = url.replace(u'%25', u'%')
+        url = url.split(u'&sa=U')[0]
         new.append(url)
     return new
 
 
 def main():
-    p = Parser()
-
-    db_name = '<google::' + date.today().isoformat() + '>'
+    p = Parser('http://google.com.ua/', False)
+    db_name = 'google-' + date.today().isoformat()
     Parser.db = Parser.client[db_name]
     p.regulars = {u'sites': u'//h3[@class="r"]/a/@href'}
 
     for n, q in enumerate(queries):
+        q = q.decode('utf-8')
         p.url = google + urllib.quote(qa(q).encode('cp1251'))
         p.open_url()
         p.get_elements()
+        p.set_elements()
         p.result[u'query'] = q
         p.result[u'sites'] = norm(p.result[u'sites'])
         p.save()
+        p.clean()
         print u'Запрос: [{}] "{}" отсканирован и сохранен'.format(n, q)
 
 if __name__ == '__main__':

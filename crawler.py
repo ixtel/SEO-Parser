@@ -2,14 +2,16 @@
 import random
 import time
 import logging
-# import pdb
-# pdb.set_trace()
 
 from selenium import webdriver
 from lxml import html
 from pymongo import MongoClient
 from reppy.cache import RobotsCache
-from settings import ROBOTS_LINK, DATABASE, START_LINK, REGULARS, IGNORE_LIST, DOMAIN, AGENT, COUNT_URLS
+from settings import ROBOTS_LINK, DATABASE, START_LINK, REGULARS, IGNORE_LIST, \
+    DOMAIN, AGENT, COUNT_URLS, RAND_NUM, DB_NAME
+
+# import pdb
+# pdb.set_trace()
 
 FORMAT = '%(levelname)s : %(asctime)s : %(funcName)s : %(lineno)d : %(message)s'
 logging.basicConfig(format=FORMAT, filename='parser.log')
@@ -24,16 +26,16 @@ class Parser(object):
     count = 0
     robots = RobotsCache()
     rules = robots.cache(ROBOTS_LINK)
-    db_name = 'www_bg_all_biz'
     client = MongoClient(DATABASE)
-    db = client[db_name]
+    db = client[DB_NAME]
     stop_flag = False
     logger.debug(u'Вызван класс Parser, закеширован robots и инициализировано соединение с базой')
 
     def __init__(self, url=START_LINK, database=True):
         self.url = url
+        self.domain = url.split('/')[2]
         self.page = ''
-        self.links = list()
+        self.js_files = list()
         self.in_links = list()
         self.out_links = list()
         self.result = dict()
@@ -46,7 +48,7 @@ class Parser(object):
                 Parser.urls_old.add(item[u'url'])
             if Parser.urls_old:
                 Parser.count = len(Parser.urls_old)
-                for url in random.sample(Parser.urls_old, 5):
+                for url in random.sample(Parser.urls_old, RAND_NUM):
                     self.url = url
                     self.open_url()
                     self.get_links()
@@ -54,33 +56,22 @@ class Parser(object):
         logger.debug(u'Создан инстанс класса Parser')
 
     @staticmethod
-    def normalize(link):
-        # Return normal link or False
-        logger.debug(u'Нормализую ссылку: {}'.format(link))
-        link = unicode(link).replace(u'\n', u'')
-        if not link:
-            return False
+    def find_stop(link):
         for stop_word in IGNORE_LIST:
             if stop_word in link.lower():
+                logger.debug(u'Ссылка не прошла стоп лист: {}'.format(link))
                 return False
-        if link.startswith(u'#'):
-            return False
-        elif link.startswith(u'http'):
-            return link
-        elif link.startswith(DOMAIN):
-            return u'http://' + link
-        elif link.startswith(u'/') and DOMAIN not in link:
-            return u'http://' + DOMAIN + link
-        else:
-            return False
+        logger.debug(u'Ссылка в порядке: {}'.format(link))
+        return link
 
     def set_elements(self):
         self.result[u'url'] = self.url
         self.result[u'load_time'] = self.page_load_time
         self.result[u'size'] = len(self.page)
-        self.result[u'links'] = self.links
+        self.result[u'js_files'] = self.js_files
         self.result[u'in_links'] = self.in_links
         self.result[u'out_links'] = self.out_links
+        self.result[u'a'] = self.in_links + self.out_links
         logger.debug(u'Установил url, load_time, size, links, in_links, out_links для {}'.format(self.url))
 
     def get_elements(self):
@@ -134,14 +125,15 @@ class Parser(object):
         logger.debug(u'Сохраняю результат в базу данных')
 
     def clean(self):
-        self.result, self.page, self.url, self.page_load_time, self.links, self.robots, self.errors = \
-            {}, '', '', 0, [], [], ''
+        self.result, self.page, self.url, self.page_load_time, self.robots, self.errors = \
+            {}, '', '', [], [], ''
         logger.debug(u'Сбрасываем параметры result, page, page_load_time, links, robots, errors')
 
     def open_url(self):
         time1 = time.time()
         try:
-            browser = webdriver.PhantomJS()  # executable_path=r'C:\phantomjs\bin\phantomjs.exe'
+            browser = webdriver.PhantomJS(executable_path=r'C:\phantomjs\bin\phantomjs.exe')
+            # PhantomJS executable_path=r'C:\phantomjs\bin\phantomjs.exe'
             browser.set_page_load_timeout(20)
             browser.get(self.url)
             self.page = browser.page_source
@@ -166,20 +158,24 @@ class Parser(object):
         if not self.page:
             return
         tree = html.fromstring(self.page)
-        self.links = tree.xpath(u'//a//@href')
+        tree.make_links_absolute(self.url)
         self.in_links = list()
         self.out_links = list()
-        for link in self.links:
-            normal_link = Parser.normalize(link)
-            if not normal_link:
+        self.js_files = list()
+        for link in tree.iterlinks():
+            if not link[2]:
                 continue
-            if DOMAIN in normal_link:
-                if Parser.rules.allowed(normal_link, AGENT):
-                    self.in_links.append(normal_link)
-            else:
-                self.out_links.append(normal_link)
+            if link[1] == 'href':
+                if Parser.find_stop(link[2]):
+                    if self.domain in link[2]:
+                        if Parser.rules.allowed(link[2], AGENT):
+                            self.in_links.append(link[2])
+                    if self.domain not in link[2]:
+                        self.out_links.append(link[2])
+            elif link[1] == 'src' and '.js' in link[2]:
+                self.js_files.append(link[2])
         Parser.urls_new = Parser.urls_new | set(self.in_links)
-        logger.debug(u'Нашел и обработал все ссылки на странице {}'.format(self.url))
+        logger.debug(u'Обработал все ссылки на странице {}'.format(self.url))
 
     def parser(self):
         while Parser.urls_new:
@@ -193,9 +189,9 @@ class Parser(object):
                     if Parser.check_meta_robots(self.result[u'robots'])[0]:
                         self.set_elements()
                         self.save()
-                        print u'[{}] Отсканировал url {}'.format(Parser.count, self.url)
                         Parser.urls_old.add(self.url)
                         Parser.count += 1
+                        print u'[{}] Отсканировал url {}'.format(Parser.count, self.url)
                         logger.debug(u'Проиндексировал url: {}'.format(self.url))
                 self.clean()
             if Parser.count == COUNT_URLS:

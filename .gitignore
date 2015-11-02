@@ -1,5 +1,6 @@
 *.pyc
 page.txt
+keys.txt
 .idea
 *.log
 *.*~
