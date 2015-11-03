@@ -1,5 +1,5 @@
 # coding: utf-8
-from . import get_all, get_one, top_in_text
+from utils import get_all, get_one, top_in_text
 
 
 class TextAnalyzer(object):

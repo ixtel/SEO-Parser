@@ -99,11 +99,11 @@ def get_all(l, flag=False):
     if type(l) is list:
         new = u' '.join(delete_none(l))
         if flag:
-            return __init__.text_normalizer(new)
+            return text_normalizer(new)
         else:
             return u' '.join(new.lower().split())
     if type(l) in (str, unicode):
-        return __init__.text_normalizer(l)
+        return text_normalizer(l)
     if type(l) is None:
         return ''
 

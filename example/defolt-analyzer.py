@@ -1,4 +1,7 @@
 # coding: utf-8
+import sys
+sys.path.append('D:\\crawler\\')
+
 from pymongo import MongoClient
 
 from analyzer import TextAnalyzer
@@ -9,7 +12,7 @@ from settings import DATABASE
 def main():
 
     client = MongoClient(DATABASE)
-    db_name = 'google-2015-11-02'
+    db_name = 'google-2015-11-03'
     db = client[db_name]
     gr = db.urls.find()
 
@@ -26,7 +29,7 @@ def main():
                 p.get_elements()
                 p.set_elements()
                 p.result['query'] = query['query']
-                p.result['position'] = i
+                p.result['position'] = i + (query['search_page'] * 100)
                 db.index.insert_one(p.result)
                 try:
                     t = TextAnalyzer(p.result)
@@ -46,12 +49,15 @@ def main():
                     t.js_files()
                     t.in_links()
                     t.out_links()
+                    print u"Отсканировал позицию {}".format(p.result['position'])
+                    p.clean()
+                    db.result.insert_one(t.__dict__)
+                    print 'Done'
                 except:
                     p.clean()
+                    print 'Error'
                     continue
-                p.clean()
-                db.result.insert_one(t.__dict__)
-                print 'Done'
+
 
 if __name__ == '__main__':
     main()
