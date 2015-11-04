@@ -134,7 +134,6 @@ class Parser(object):
         time1 = time.time()
         try:
             browser = webdriver.PhantomJS()
-            # PhantomJS executable_path=r'C:\phantomjs\bin\phantomjs.exe'
             browser.set_page_load_timeout(20)
             browser.get(self.url)
             self.page = browser.page_source

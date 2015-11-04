@@ -1,7 +1,4 @@
 # coding: utf-8
-from pymongo import MongoClient
-
-from settings import DATABASE
 from analyzer import TextAnalyzer
 from crawler import Parser
 
@@ -15,63 +12,40 @@ URL = [u'http://kiev.prom.ua/Markizy',
        u'http://markizy.kiev.ua/']
 
 
-def main(url, database=False):
+class Worker(Parser, TextAnalyzer):
 
-    if not database:
-        p = Parser(url)
-        p.open_url()
-        p.get_elements()
-        t = TextAnalyzer(p.result)
-        print u'Url: {} | Загружен за: {} сек'.format(p.result[u'url'], p.result[u'load_time'])
-    else:
-        client = MongoClient(DATABASE)
-        db = client.prom_all
-        result = db.urls.find({'url': url})
-        result = result[0]
-        t = TextAnalyzer(result)
-        print u'Url: {} | Загружен за: {} сек'.format(result[u'url'], result[u'load_time'])
+    def __init__(self, url, database=False, *args, **kwargs):
+        super(Worker, self).__init__(url, database, *args, **kwargs)
 
-    '''
-    for x in t.__dict__:
-        if x != 'page':
-            if type(t.__dict__[x]) is dict:
-                for y in t.__dict__[x]:
-                    print y, t.__dict__[x][y]
-            elif type(t.__dict__[x]) is list:
-                print x, ' '.join(t.__dict__[x])
-            else:
-                print x, t.__dict__[x]
-    '''
+    def work(self):
+        self.open_url()
+        self.get_elements()
+        self.set_elements()
+        print u'Url: {} | Загружен за: {} сек'.format(self.result[u'url'], self.result[u'load_time'])
 
-    t.title()
-    t.description()
-    t.keywords()
-    t.canonical()
-    t.h1()
-    t.h2()
-    t.h3()
-    t.text()
-    t.anchors()
-    t.load_time()
-    t.size()
-    t.script()
+        super(Parser, self).__init__(self.result)
 
-    '''
-    print u'H1: {}'.format(t.h1_)
-    print u'Title: {}'.format(t.title_)
-    print u'KeyWords:'
-    for key in t.keys:
-        print key, t.keys[key]
-    '''
-    print u'KeyWords: {}'.format(u' '.join(sorted(t.keys)))
-    print '#'*50
-    print u'Всего баллов {}'.format(str(t.ball))
-    print '#'*50
+        self.title()
+        self.description()
+        self.keywords()
+        self.canonical()
+        self.h1()
+        self.h2()
+        self.h3()
+        self.text()
+        self.anchors()
+        self.load_time()
+        self.size()
+        self.script()
+        self.js_files()
+        self.in_links()
+        self.out_links()
 
-    # client = MongoClient(DATABASE)
-    # db = client.prom_all
-    # db.result.insert_one(t.__dict__)
+        print u'KeyWords: {}'.format(u' '.join(sorted(self.text_top5)))
+        print '#'*50
+        print u'Всего баллов {}'.format(str(self.ball))
+        print '#'*50
 
 if __name__ == '__main__':
     for url in URL:
-        main(url, False)
+        Worker(url, False).work()
