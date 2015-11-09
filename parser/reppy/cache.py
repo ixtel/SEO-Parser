@@ -23,12 +23,13 @@
 
 '''Caching fetch robots.txt files'''
 
-
 import time
+
 import requests
 
-from . import parser, logger, exceptions, Utility
-from .parser import string_types
+from . import logger, Utility
+from . import parser, exceptions
+from parser import string_types
 
 
 class RobotsCache(object):

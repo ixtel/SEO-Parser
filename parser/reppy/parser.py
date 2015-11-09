@@ -35,7 +35,8 @@ except ImportError:
     import urlparse
     from urllib import unquote
 
-from . import logger, exceptions, Utility
+from . import logger, Utility
+from . import exceptions
 
 if sys.version_info[0] == 3:
     string_types = str

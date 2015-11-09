@@ -1,5 +1,5 @@
 # coding: utf-8
-from utils import Utils
+from parser.utils import Utils
 
 
 class TextAnalyzer(Utils):

@@ -62,7 +62,7 @@ if sys.version_info[0] == 3:
 #####################################################
 # Import our exceptions at the global level
 #####################################################
-from .exceptions import ServerError, ReppyException
+from exceptions import ServerError, ReppyException
 
 class Utility(object):
     '''Utility methods'''
