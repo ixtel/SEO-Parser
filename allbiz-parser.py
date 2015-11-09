@@ -1,18 +1,19 @@
 # coding: utf-8
-import multiprocessing
 import threading
 import random
 import logging
 logger = logging.getLogger()
 
-from parser.crawler import Parser
-from parser.settings import Settings
+from pars.crawler import Parser
+from pars.settings import Settings
 
 Settings.START_LINK = 'http://skirest.com/'
 se = Settings()
-se.THREADS = 20
-se.TIMEOUT = 60
+se.THREADS = 10
+se.TIMEOUT = 40
 Parser.settings = se
+i = ['#', '?p=', '/feed/', '.php']
+Parser.IGNORE_LIST.extend(i)
 
 
 class ParserAllbis (Parser):
@@ -51,9 +52,9 @@ class Worker(object):
             th.append(t)
 
         while True:
-            print u"Чтобы остановить парсинг введите - y\n"
+            print u"Чтобы остановить парсинг введите - S (Stop)\n"
             ex = raw_input()
-            if ex.lower() == 'y':
+            if ex.lower() == 's':
                 Parser.d['stop_flag'] = True
                 break
 
@@ -63,6 +64,16 @@ class Worker(object):
         print u'*******Сканирование прекращено*******'
         print u'Успел отсканировать: {}'.format(len(ParserAllbis.urls_old))
         print u'Осталось в очереди на сканирование: {}'.format(len(ParserAllbis.urls_new))
+        print u'*******Ошибок всего: {}*******'.format(len(Parser.errors))
+        print Parser.errors
+
+        Parser.urls_new = Parser.errors
+        Parser.d['stop_flag'] = False
+        for url in Parser.errors:
+            Parser.urls_old.remove(url)
+
+        p = ParserAllbis(database=False)
+        p.parser()
 
 if __name__ == '__main__':
     Worker()

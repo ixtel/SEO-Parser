@@ -5,7 +5,7 @@ sys.path.append('D:\\crawler\\')
 import urllib
 from datetime import date
 
-from parser.crawler import Parser
+from pars.crawler import Parser
 
 queries = [u'купить макароны']
 

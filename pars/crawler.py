@@ -10,15 +10,15 @@ from reppy.meta import check_meta_robots
 
 import logging
 FORMAT = '%(levelname)s : %(asctime)s : %(funcName)s : %(lineno)d : %(message)s'
-logging.basicConfig(format=FORMAT, filename='parser.log')
+logging.basicConfig(format=FORMAT, filename='pars.log')
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 from threading import Lock
 l = Lock()
 
-from multiprocessing import Manager
-manager = Manager()
+# from multiprocessing import Manager
+# manager = Manager()
 
 
 class Parser(object):
@@ -29,9 +29,10 @@ class Parser(object):
                    "@", ".zip", ".7z", ".rar", ".exe", ".pl", ".pdf", ".css", ".js"]
 
     settings = Settings()
-    urls_new = manager.list()
-    urls_old = manager.list()
-    d = manager.dict()
+    urls_new = list()  # manager.list()
+    urls_old = list()  # manager.list()
+    errors = list()
+    d = dict()  # manager.dict()
     d['count'] = 0
     d['stop_flag'] = False
     logger.debug(u'Вызван класс Parser, закеширован robots и инициализировано соединение с базой')
@@ -40,7 +41,7 @@ class Parser(object):
         if Parser.d['count'] == 0:
             self.url = Parser.settings.START_LINK
         self.page = self.errors = ''
-        self.js_files = self.in_links = self.out_links = self.links = self.robots = []
+        self.js_files, self.in_links, self.out_links, self.links, self.robots = [], [], [], [], []
         self.result = {}
         self.page_load_time = 0
         self.domain = Parser.settings.DOMAIN
@@ -52,8 +53,6 @@ class Parser(object):
         for stop_word in Parser.IGNORE_LIST:
             if stop_word in link.lower():
                 return False
-        if link.startswith(u'http') and u'#' in link:
-            return link.split(u'#')[0]
         return link
 
     def set_elements(self):
@@ -91,18 +90,17 @@ class Parser(object):
         logger.debug(u'Сбрасываем параметры result, page, page_load_time, links, robots, errors')
 
     def open_url(self):
-        browser = webdriver.PhantomJS()
-        browser.set_page_load_timeout(20)
         try:
+            browser = webdriver.PhantomJS(executable_path='c:\\phantomjs\\bin\\phantomjs.exe')
+            browser.set_page_load_timeout(Parser.settings.TIMEOUT)
             time1 = time.time()
             browser.get(self.url)
             time2 = time.time()
-            self.page = browser.page_source
+            self.page = browser.page_source.encode('utf-8')
             browser.quit()
             self.page_load_time = time2 - time1
             logger.debug(u'Url открыт успешно')
         except Exception, e:
-            browser.quit()
             self.errors = 'Error'
             self.page = ''
             print u'[Error] Страница {} не загрузилась'.format(self.url)
@@ -112,9 +110,7 @@ class Parser(object):
     def get_links(self):
         tree = html.fromstring(self.page)
         tree.make_links_absolute(self.url)
-        self.in_links = []
-        self.out_links = []
-        self.js_files = []
+        self.links, self.in_links, self.out_links, self.js_files = [], [], [], []
         for link in tree.iterlinks():
             if not link[2]:
                 continue
@@ -125,40 +121,41 @@ class Parser(object):
                             self.in_links.append(link[2])
                     else:
                         self.out_links.append(link[2])
-                    self.links.append((link[2], link[0].text))
+                    self.links.append([link[2], html.tostring(link[0], encoding='utf-8')])
             elif link[1] == 'src' and '.js' in link[2]:
                 self.js_files.append(link[2])
-        l.acquire()
-        Parser.urls_new.extend(self.in_links)
-        l.release()
+        with l:
+            for url in self.in_links:
+                if url not in Parser.urls_new:
+                    Parser.urls_new.append(url)
         logger.debug(u'Обработал все ссылки на странице {}'.format(self.url))
 
     def parser(self):
         while Parser.urls_new:
-            l.acquire()
-            self.url = Parser.urls_new.pop()
-            l.release()
+            with l:
+                self.url = Parser.urls_new.pop()
             if self.url not in Parser.urls_old:
-                l.acquire()
-                Parser.urls_old.append(self.url)
-                Parser.d['count'] += 1
-                l.release()
+                with l:
+                    Parser.urls_old.append(self.url)
                 self.open_url()
                 if self.page:
                     self.get_elements()
-                    if check_meta_robots(self.page)[0]:
-                        self.get_links()
                     if check_meta_robots(self.page)[1]:
+                        self.get_links()
+                    if check_meta_robots(self.page)[0]:
                         self.set_elements()
                         self.save()
+                        with l:
+                            Parser.d['count'] += 1
                         print u'[{}] Отсканировал и сохранил url {}'.format(Parser.d['count'], self.url)
                         logger.debug(u'[{}] Отсканировал и сохранил url {}'.format(Parser.d['count'], self.url))
                 else:
+                    with l:
+                        Parser.errors.append(self.url)
                     logger.debug(u'При открытии url: {} произошла ошибка'.format(self.url))
                 self.clean()
             else:
                 logger.debug(u'url: {} уже был отсканирован ранее'.format(self.url))
-
             if Parser.d['stop_flag']:
                 logger.debug(u'Работа парсера завершена url: {}'.format(self.url))
                 break

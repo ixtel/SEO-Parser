@@ -4,9 +4,9 @@ sys.path.append('D:\\crawler\\')
 
 from pymongo import MongoClient
 
-from parser.analyzer import TextAnalyzer
-from parser.crawler import Parser
-from parser.settings import DATABASE
+from pars.analyzer import TextAnalyzer
+from pars.crawler import Parser
+from pars.settings import DATABASE
 
 
 def main():

@@ -4,7 +4,7 @@ sys.path.append('D:\\crawler\\')
 
 import csv
 from pymongo import MongoClient
-from parser.settings import DATABASE
+from pars.settings import DATABASE
 
 client = MongoClient(DATABASE)
 db_name = 'google-2015-11-03'
