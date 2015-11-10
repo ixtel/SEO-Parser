@@ -1,5 +1,6 @@
 # coding: utf-8
 import time
+import random
 from selenium import webdriver
 from lxml import html
 
@@ -22,6 +23,26 @@ l = Lock()
 
 
 class Parser(object):
+    """
+    Парсер сайтов. Внутри парсера реализованы меторы:
+    open_url - открывает страницу любого сайта, работает через selenium + phantomjs
+    get_links - обрабатывает полученную страницу, и собирает с нее все ссылки, ставит в очередь на сканирование
+    get_elements - получает значения со страницы по XPATH выражениям из self.regulars
+    set_elements - дополняет результат информацией о странице и ссылками
+    clean - очищает переменные от значений прошлой страницы
+    save - сохраняет словать результата (self.result) в базу данных из Parser.settings.db (Mongodb)
+    parser - сканирование страниц поочередно из очереди, обход парсера по всему сайту
+    install - устанавливает парсер в начальную точку, для многопоточности
+    set_from_db - устанавливает парсер существующими значениями из базы для продолжения сканирования
+
+    Переменные:
+    urls_new - список очереди адресов на сканирование
+    urls_old - список отсканированных адресов, страницы которые тут есть не будут отсканированы
+    errors - список страниц которые не удалось отсканировать, в дальнейшем может быть просканирован дополнительно
+    count - количество успешно просканированных адресов
+    stop_flag - если True - прекращает сканирование
+    IGNORE_LIST - если любой из элементов этого списка есть в url - он не будет добавлен в очередь сканирования
+    """
 
     IGNORE_LIST = [".ico", ".gif", ".png", ".jpg", ".jpeg", ".bmp", ".mp4",
                    ".webm", ".apk", ".ogv", ".swf", ".svg", ".eot",
@@ -29,24 +50,38 @@ class Parser(object):
                    "@", ".zip", ".7z", ".rar", ".exe", ".pl", ".pdf", ".css", ".js"]
 
     settings = Settings()
-    urls_new = list()  # manager.list()
-    urls_old = list()  # manager.list()
+    urls_new = list()
+    urls_old = list()
     errors = list()
-    d = dict()  # manager.dict()
-    d['count'] = 0
-    d['stop_flag'] = False
+    count = 0
+    stop_flag = False
     logger.debug(u'Вызван класс Parser, закеширован robots и инициализировано соединение с базой')
 
     def __init__(self):
-        if Parser.d['count'] == 0:
+        if Parser.count == 0:
             self.url = Parser.settings.START_LINK
-        self.page = self.errors = ''
         self.js_files, self.in_links, self.out_links, self.links, self.robots = [], [], [], [], []
-        self.result = {}
-        self.page_load_time = 0
+        self.page, self.errors, self.result, self.page_load_time = '', '', {}, 0
         self.domain = Parser.settings.DOMAIN
         self.regulars = Parser.settings.REGULARS
         logger.debug(u'Создан инстанс класса Parser')
+
+    def install(self, url=settings.START_LINK):
+        self.url = url
+        self.open_url()
+        self.get_links()
+        Parser.urls_new.append(self.url)
+
+    def set_from_db(self):
+        for item in Parser.settings.db.urls.find():
+            Parser.urls_old.append(item[u'url'])
+        if Parser.urls_old:
+            Parser.count = len(Parser.urls_old)
+            for url in random.sample(Parser.urls_old, Parser.settings.RAND_NUM):
+                self.url = url
+                self.open_url()
+                self.get_links()
+            logger.debug(u'Парсер инициализирован значениями из базы')
 
     @staticmethod
     def find_stop(link):
@@ -146,9 +181,9 @@ class Parser(object):
                         self.set_elements()
                         self.save()
                         with l:
-                            Parser.d['count'] += 1
-                        print u'[{}] Отсканировал и сохранил url {}'.format(Parser.d['count'], self.url)
-                        logger.debug(u'[{}] Отсканировал и сохранил url {}'.format(Parser.d['count'], self.url))
+                            Parser.count += 1
+                        print u'[{}] Отсканировал и сохранил url {}'.format(Parser.count, self.url)
+                        logger.debug(u'[{}] Отсканировал и сохранил url {}'.format(Parser.count, self.url))
                 else:
                     with l:
                         Parser.errors.append(self.url)
@@ -156,10 +191,20 @@ class Parser(object):
                 self.clean()
             else:
                 logger.debug(u'url: {} уже был отсканирован ранее'.format(self.url))
-            if Parser.d['stop_flag']:
+            if Parser.stop_flag:
                 logger.debug(u'Работа парсера завершена url: {}'.format(self.url))
                 break
-        print u'Поток парсинга завершен. Отсканировано {}'.format(len(Parser.urls_old))
+        if Parser.errors:
+            logger.debug(u'Запушена обработка ошибок')
+            Parser.urls_new = Parser.errors
+            for url in Parser.errors:
+                Parser.urls_old.remove(url)
+                logger.debug(u'Будет отсканирован снова: {}'.format(url))
+            Parser.errors = []
+            Parser.stop_flag = False
+            self.parser()
+            Parser.stop_flag = True
+        print u'Поток отсканировал {}'.format(len(Parser.urls_old))
 
 
 if __name__ == '__main__':

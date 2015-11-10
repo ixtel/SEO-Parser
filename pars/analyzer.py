@@ -108,6 +108,26 @@ class TextAnalyzer(Utils):
         self.out_links_kolichestvo = len(page_data[u'out_links'])                       # int
         self.out_links_ball = 0                                                         # int
 
+    def analyze(self):
+        try:
+            self.title()
+            self.description()
+            self.keywords()
+            self.canonical()
+            self.h1()
+            self.h2()
+            self.h3()
+            self.text()
+            self.anchors()
+            self.load_time()
+            self.size()
+            self.script()
+            self.js_files()
+            self.in_links()
+            self.out_links()
+        except Exception, e:
+            print e
+
     def title(self):
         if 10 < self.title_dlina <= 70:
             self.title_ball += 3
