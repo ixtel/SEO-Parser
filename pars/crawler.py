@@ -66,7 +66,8 @@ class Parser(object):
         self.regulars = Parser.settings.REGULARS
         logger.debug(u'Создан инстанс класса Parser')
 
-    def install(self, url=settings.START_LINK):
+    def install(self, url):
+        print Parser.settings.__dict__
         self.url = url
         self.open_url()
         self.get_links()
@@ -126,7 +127,7 @@ class Parser(object):
 
     def open_url(self):
         try:
-            browser = webdriver.PhantomJS(executable_path='c:\\phantomjs\\bin\\phantomjs.exe')
+            browser = webdriver.PhantomJS()
             browser.set_page_load_timeout(Parser.settings.TIMEOUT)
             time1 = time.time()
             browser.get(self.url)
@@ -156,7 +157,7 @@ class Parser(object):
                             self.in_links.append(link[2])
                     else:
                         self.out_links.append(link[2])
-                    self.links.append([link[2], html.tostring(link[0], encoding='utf-8')])
+                    self.links.append({'link': link[2], 'code': html.tostring(link[0], encoding='utf-8')})
             elif link[1] == 'src' and '.js' in link[2]:
                 self.js_files.append(link[2])
         with l:
@@ -194,17 +195,22 @@ class Parser(object):
             if Parser.stop_flag:
                 logger.debug(u'Работа парсера завершена url: {}'.format(self.url))
                 break
-        if Parser.errors:
-            logger.debug(u'Запушена обработка ошибок')
-            Parser.urls_new = Parser.errors
-            for url in Parser.errors:
-                Parser.urls_old.remove(url)
-                logger.debug(u'Будет отсканирован снова: {}'.format(url))
-            Parser.errors = []
-            Parser.stop_flag = False
-            self.parser()
-            Parser.stop_flag = True
         print u'Поток отсканировал {}'.format(len(Parser.urls_old))
+
+    def scan_errors(self, num=5):
+        for _ in range(num):
+            if Parser.errors:
+                logger.debug(u'Запушена обработка ошибок')
+                with l:
+                    Parser.urls_new = Parser.errors
+                    for url in Parser.errors:
+                        Parser.urls_old.remove(url)
+                        logger.debug(u'Будет отсканирован снова: {}'.format(url))
+                    Parser.errors = []
+                    Parser.stop_flag = False
+                self.parser()
+                with l:
+                    Parser.stop_flag = True
 
 
 if __name__ == '__main__':
