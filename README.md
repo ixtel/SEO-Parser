@@ -1,2 +1,2 @@
-# SEO-Page-Quality
+# SEO-Parser
 Some website parser, that can calculate page quality.
